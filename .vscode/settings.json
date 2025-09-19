@@ -1,0 +1,8 @@
+{
+	"emmet.includeLanguages": {
+		"ripple": "html,css,js,ts",
+	},
+	"files.associations": {
+		"*.ripple": "ripple",
+	}
+}

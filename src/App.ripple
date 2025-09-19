@@ -1,0 +1,159 @@
+// @ts-expect-error
+import { effect, RippleMap } from 'ripple';
+var _IDCNT_ = 0;
+
+component EditTodo({ getTodo, setTodo }: {getTodo:()=>any,setTodo:(any)=>void}) {
+	<div>
+    const popover_id = _IDCNT_++;
+		<button type='button' popovertarget={popover_id} popovertargetaction='show'>{'Edit'}</button>
+		<div id={popover_id} popover='auto' class='modal'>
+			<form onsubmit={(e: SubmitEvent) => {
+					e.preventDefault();
+					const data = new FormData(e.target);
+					const todo = getTodo();
+					todo.title = data.get('title');
+					console.log(todo);
+					setTodo(todo);
+				}}>
+				<input type='text' name='title' value={getTodo().title} />
+				<button type='submit'>{'Save'}</button>
+			</form>
+			<button popovertarget={popover_id} popovertargetaction='hide'>{'Cancel'}</button>
+		</div>
+	</div>
+
+	<style>
+	  .modal {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: #0004;
+			align-items: center;
+			justify-content: center;
+		}
+    .modal form {
+			background: #fff;
+			padding: 24px;
+			border-radius: 8px;
+			box-shadow: 0 2px 8px #0003;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+	</style>
+}
+
+component TodoApp() {
+	const $todos = new RippleMap();
+	effect(() => {
+    $todos.set("123", {title: "efaaf"})
+    console.log($todos);
+	});
+
+	function addTodo(todo) {
+    $todos.set(crypto.randomUUID(), todo);
+	}
+
+	function removeTodo(id) {
+    $todos.delete(id);
+	}
+
+	<div>
+		<h1>{'Todo List'}</h1>
+		<form onsubmit={(e: SubmitEvent) => {
+      console.log(e);
+      console.log(e.target);
+      e.preventDefault();
+
+      const data = new FormData(e.target);
+      console.log(data);
+
+      addTodo({
+        title: data.get('title'),
+      });
+
+      e.target.reset();
+    }}>
+			<input type='text' placeholder='Add a todo...' name='title' />
+			<button type='submit'>{'Add'}</button>
+  </form>
+  <ul style='display: flex; flex-flow: column wrap;'>
+    for (const pair of $todos) {
+      const id = pair[0];
+      let $todo = $todos.get(id);
+      effect(() => {
+        console.log($todo);
+      });
+      <li>
+        <div style='display: flex;gap: 0.1em;'>
+          <span>{$todo.title}</span>
+          <button onclick={() => removeTodo(id)}>{'-'}</button>
+          <EditTodo getTodo={() => $todo} setTodo={newTodo => {
+            $todos.set(id, { ...newTodo }); // Trigger reactivity by creating a new object
+          }} />
+       </div>
+      </li>
+    }
+    </ul>
+	</div>
+  <style>
+
+  </style>
+}
+
+export component App() {
+	<div class='container'>
+		<h1>{'Welcome to Ripple!'}</h1>
+		<div class='counter'>
+			let $count = 0;
+
+			<button onClick={() => $count--}>{'-'}</button>
+			<span class='count'>{$count}</span>
+			<button onClick={() => $count++}>{'+'}</button>
+		</div>
+		<div>
+			<p>{'This is a basic Ripple application template.'}</p>
+			<p>
+				{'Edit '}
+				<code>{'src/App.ripple'}</code>
+				{' to get started.'}
+			</p>
+		</div>
+	</div>
+	<div class="container"><TodoApp /></div>
+
+	<style>
+	  .container {
+			text-align: center;
+			font-family: "Arial", sans-serif;
+		}
+		  p {
+			margin: 12px 0;
+			font-family: "Arial", sans-serif;
+		}
+		  code {
+			background: #f4f4f4;
+			padding: 2px 6px;
+			border-radius: 4px;
+			font-family: "Courier New", monospace;
+			color: #333;
+		}
+		  button {
+			font-size: 1.5em;
+			padding: 6px 12px;
+			margin: 0 6px;
+			cursor: pointer;
+			border: none;
+			font-family: "Courier New", monospace;
+		}
+		  button {
+			background-color: #e0e0e0;
+		}
+		  .count {
+			margin: 0 12px;
+			font-size: 1.5em;
+		}
+	</style>
+}
