@@ -1,123 +1,5 @@
 // @ts-expect-error
-import { effect, RippleMap } from 'ripple';
-// import type { r_Todo } from './types.ts';
-import { ripple } from './types.ts';
-var _IDCNT_ = 0;
-
-component EditTodo({ getTodo, setTodo }: {getTodo:()=>any,setTodo:(any)=>void}) {
-	<div>
-    const popover_id = _IDCNT_++;
-		<button type='button' popovertarget={`_${popover_id}`} popovertargetaction='show'>{'Edit'}</button>
-		<div id={`_${popover_id}`} popover='auto' class='modal'>
-			<form onsubmit={(e: SubmitEvent) => {
-					e.preventDefault();
-					const data = new FormData(e.target);
-					const title = data.get('title');
-					if (title?.trim().length == 0) {
-						throw new Error("You should actually do something");
-					}
-					const todo = getTodo();
-					todo.$title = title;
-					console.log(todo);
-					setTodo(todo);
-				}}>
-					<input type='text' name='title' value={getTodo().$title} />
-				<button type='submit'>{'Save'}</button>
-			</form>
-			<button popovertarget={`_${popover_id}`} popovertargetaction='hide'>{'Cancel'}</button>
-		</div>
-	</div>
-
-	<style>
-	  .modal {
-			position: fixed;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			background: #0004;
-			align-items: center;
-			justify-content: center;
-		}
-    .modal form {
-			background: #fff;
-			padding: 24px;
-			border-radius: 8px;
-			box-shadow: 0 2px 8px #0003;
-			display: flex;
-			flex-direction: column;
-			gap: 12px;
-		}
-	</style>
-}
-
-component TodoApp() {
-	// console.log(ripple("hi"));
-	const $todos = new RippleMap();
-	fetch('https://jsonplaceholder.typicode.com/todos/1')
-		.then(response => response.json())
-		.then(todo=>{
-				addTodo(todo);
-			});
-	effect(() => {
-		console.log($todos);
-	});
-
-	function addTodo(todo) {
-    $todos.set(crypto.randomUUID(), ripple(todo));
-	}
-
-	function removeTodo(id) {
-    $todos.delete(id);
-	}
-
-	<div>
-		<h1>{'Todo List'}</h1>
-		<form onsubmit={(e: SubmitEvent) => {
-      console.log(e);
-      console.log(e.target);
-      e.preventDefault();
-
-      const data = new FormData(e.target);
-			const title = data.get("title");
-			if (title?.trim()?.length == 0) {
-
-				throw new Error("You should do something");
-			}
-      console.log(data);
-
-      addTodo({
-        title: data.get('title'),
-      });
-
-      e.target.reset();
-    }}>
-			<input type='text' placeholder='Add a todo...' name='title' />
-			<button type='submit'>{'Add'}</button>
-  </form>
-  <ul style='display: flex; flex-flow: column wrap;'>
-    for (const pair of $todos) {
-      const id = pair[0];
-      let $todo = $todos.get(id);
-      effect(() => {
-        console.log($todo);
-      });
-      <li>
-        <div style='display: flex;gap: 0.1em;'>
-          <span>{$todo.$title}</span>
-          <button onclick={() => removeTodo(id)}>{'Delete'}</button>
-          <EditTodo getTodo={() => $todo} setTodo={newTodo => {
-            $todos.set(id, ripple({...newTodo})); // Trigger reactivity by creating a new object
-          }} />
-       </div>
-      </li>
-    }
-    </ul>
-	</div>
-  <style>
-
-  </style>
-}
+import TodoApp from '@/TodoApp.ripple';
 
 export component App() {
 	<div class='container'>
@@ -138,7 +20,7 @@ export component App() {
 			</p>
 		</div>
 	</div>
-	<div class="container"><TodoApp /></div>
+	<div class="container center"><TodoApp /></div>
 
 	<style>
 	  .container {
@@ -170,6 +52,11 @@ export component App() {
 		  .count {
 			margin: 0 12px;
 			font-size: 1.5em;
+		}
+		.center {
+			display:flex;
+			flex:1;
+			justify-content:center;
 		}
 	</style>
 }

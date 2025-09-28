@@ -3,6 +3,7 @@
 		"target": "ESNext",
 		"module": "ESNext",
 		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"allowImportingTsExtensions": true,
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true,
 		"moduleResolution": "bundler",
