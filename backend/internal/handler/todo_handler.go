@@ -14,11 +14,20 @@ import (
 )
 
 type TodoHandler struct {
-	Todos *service.TodoService
+	Todos      *service.TodoService
+	CreatedHub *EventHub
+	UpdatedHub *EventHub
+	DeletedHub *EventHub
 }
 
 func NewTodoHandler(todos *service.TodoService) *TodoHandler {
 	return &TodoHandler{Todos: todos}
+}
+
+func (h *TodoHandler) SetWebSocketHubs(created, updated, deleted *EventHub) {
+	h.CreatedHub = created
+	h.UpdatedHub = updated
+	h.DeletedHub = deleted
 }
 
 func (h *TodoHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -71,6 +80,14 @@ func (h *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Broadcast the created todo to all WebSocket clients
+	if h.CreatedHub != nil {
+		if data, err := json.Marshal(todo); err == nil {
+			h.CreatedHub.Broadcast(data)
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(todo)
@@ -118,6 +135,14 @@ func (h *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Broadcast the updated todo to all WebSocket clients
+	if h.UpdatedHub != nil {
+		if data, err := json.Marshal(todo); err == nil {
+			h.UpdatedHub.Broadcast(data)
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(todo)
 }
@@ -141,6 +166,17 @@ func (h *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// Broadcast the deleted todo ID to all WebSocket clients
+	if h.DeletedHub != nil {
+		type deletedEvent struct {
+			ID int64 `json:"id"`
+		}
+		if data, err := json.Marshal(deletedEvent{ID: todoID}); err == nil {
+			h.DeletedHub.Broadcast(data)
+		}
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 

@@ -1,0 +1,14 @@
+.todo {
+  padding: .5em;
+  border: 1.5px solid gray;
+  border-radius: 1em;
+  display: flex;
+  flex: 1 0 max-content;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5em;
+  background-color: #fff;
+}
+.todo:has(.popover-content) {
+  border-color: #000;
+}

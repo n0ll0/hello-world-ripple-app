@@ -68,6 +68,18 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 	todoHandler := handler.NewTodoHandler(todoService)
 
+	// Initialize WebSocket event hubs - one per event type
+	todoCreatedHub := handler.NewEventHub("todo:created")
+	todoUpdatedHub := handler.NewEventHub("todo:updated")
+	todoDeletedHub := handler.NewEventHub("todo:deleted")
+
+	go todoCreatedHub.Run()
+	go todoUpdatedHub.Run()
+	go todoDeletedHub.Run()
+
+	// Connect the hubs to the todo handler
+	todoHandler.SetWebSocketHubs(todoCreatedHub, todoUpdatedHub, todoDeletedHub)
+
 	r := chi.NewRouter()
 
 	// CORS middleware
@@ -100,6 +112,11 @@ func main() {
 			protected.Delete("/todos/{id}", todoHandler.Delete)
 		})
 	})
+
+	// WebSocket endpoints - one per event type
+	r.Get("/ws/todos/created", todoCreatedHub.HandleWebSocket)
+	r.Get("/ws/todos/updated", todoUpdatedHub.HandleWebSocket)
+	r.Get("/ws/todos/deleted", todoDeletedHub.HandleWebSocket)
 
 	log.Printf("Starting server with OAuth2 and SQLite on :%s...", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, r); err != nil {

@@ -1,0 +1,56 @@
+import { effect, track, TrackedMap, untrack, type Tracked, TrackedObject } from 'ripple';
+import type { Todo } from '@/types.ts';
+import { getTodos, editTodo, getTodo, deleteTodo, createTodo, login } from '@/useApi.ts';
+
+export function TODOS() {
+	const todos = new TrackedMap<string, Tracked<Todo>>();
+	effect(async () => {
+		const loginres = await login({
+			username: 'uko',
+			password: 'uko',
+		});
+		console.log(loginres);
+		const { data: _todos } = await getTodos();
+		console.log(_todos);
+		if (_todos) {
+			console.log(_todos);
+			for (const todo of _todos) {
+				console.log(todo);
+				@todos.set(todo.id, track(todo));
+				// effect(()=>{
+				// 	editTodo($todo.id, unripple(untrack($todo)))
+				// });
+			}
+		}
+	});
+	effect(() => {
+		console.log(@todos);
+	});
+
+	async function addTodo(todo) {
+		const tempId = crypto.randomUUID();
+		@todos.set(tempId, track(todo));
+		const { data: _todo } = await createTodo(todo);
+
+		@todos.delete(tempId);
+		@todos.set(@todo.id, track(_todo));
+	}
+
+	async function r_editTodo(id, newTodo) {
+		@todos.set(id, track(newTodo)); // Trigger reactivity by creating a new object
+		const { data: _todo } = await editTodo(id, newTodo);
+		@todos.set(id, track(_todo));
+		// Trigger reactivity by creating a new object
+	}
+
+	function removeTodo(id) {
+		@todos.delete(id);
+	}
+
+	return {
+		todos,
+		addTodo,
+		r_editTodo,
+		removeTodo,
+	};
+}
