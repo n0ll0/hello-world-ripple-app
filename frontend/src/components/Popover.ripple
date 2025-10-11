@@ -1,0 +1,96 @@
+import { effect, TrackedObject } from 'ripple';
+
+// AnchoredPopover
+// Usage:
+// <AnchoredPopover>
+//   <AnchoredPopoverTrigger>
+//     <button>⋮</button>
+//   </AnchoredPopoverTrigger>
+//   <AnchoredPopoverContent>
+//     <div>Content here</div>
+//   </AnchoredPopoverContent>
+// </AnchoredPopover>
+
+// Global reference set by AnchoredPopover at runtime; must not be a TrackedObject outside a component
+let POPOVER_STATE = null;
+
+export component AnchoredPopoverTrigger({children, ...rest}) {
+	<button {...rest} onClick={(e) => {
+		e.stopPropagation();
+		// If not mounted yet, ignore clicks
+		if (!POPOVER_STATE) return;
+		const target = e.currentTarget || e.target;
+		const rect = target.getBoundingClientRect();
+
+    // const popoverWidth = ;
+    // const popoverHeight = ;
+
+		let x = rect.left + window.scrollX;
+		let y = rect.bottom + window.scrollY + 8;
+
+		if (x /*+ popoverWidth*/ > window.innerWidth + window.scrollX) {
+			x = rect.right + window.scrollX //- popoverWidth;
+		}
+		if (x < window.scrollX) {
+			x = window.scrollX + 10;
+		}
+		if (y /*+ popoverHeight*/ > window.innerHeight + window.scrollY) {
+			y = rect.top + window.scrollY //- popoverHeight - 8;
+		}
+		if (y < window.scrollY) {
+			y = window.scrollY + 10;
+		}
+
+		@POPOVER_STATE.x = x;
+		@POPOVER_STATE.y = y;
+		@POPOVER_STATE.isOpen = !@POPOVER_STATE.isOpen;
+	}}>
+    <children></children>
+	</button>
+}
+
+export component AnchoredPopoverContent({children}) {
+	if (POPOVER_STATE && @POPOVER_STATE.isOpen) {
+		<div
+			class="anchored-popover-content"
+			style={`position: fixed; left: ${@POPOVER_STATE.x}px; top: ${@POPOVER_STATE.y}px; background: #fff; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; border-radius: 6px; padding: 1rem; width: max-content;`}
+			onclick={(e) => e.stopPropagation()}
+		>
+      <children></children>
+		</div>
+	}
+}
+
+export component AnchoredPopover({ children }) {
+	let popoverState = new TrackedObject({
+		isOpen: false,
+		x: 0,
+		y: 0,
+	});
+
+	// Update global state reference in this component context
+	POPOVER_STATE = popoverState;
+
+	effect(() => {
+		if (@popoverState.isOpen) {
+			const handler = (e) => {
+				if (!e.target.closest('.anchored-popover-content')) {
+					@popoverState.isOpen = false;
+				}
+			};
+			document.addEventListener('click', handler);
+			return () => document.removeEventListener('click', handler);
+		}
+	});
+
+	// Track mount/unmount with a no-op effect and clean global ref on unmount
+	effect(() => {
+		return () => {
+			if (POPOVER_STATE === popoverState) POPOVER_STATE = null;
+		};
+	});
+
+	<div style="position: relative;">
+    <children></children>
+	</div>
+}

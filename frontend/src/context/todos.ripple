@@ -44,6 +44,7 @@ export function TODOS() {
 	}
 
 	function removeTodo(id) {
+		deleteTodo(id);
 		@todos.delete(id);
 	}
 
