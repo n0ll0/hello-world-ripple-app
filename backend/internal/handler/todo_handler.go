@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 	"github.com/go-chi/chi/v5"
 
 	"github.com/n0ll0/hello-world-ripple-app-backend/internal/middleware"
@@ -55,12 +54,12 @@ type updateTodoRequest struct {
 }
 
 func (h *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
-	select {
-	case <-r.Context().Done():
-		http.Error(w, "request cancelled", http.StatusRequestTimeout)
-		return
-	case <-time.After(5 * time.Second):
-	}
+	// select {
+	// case <-r.Context().Done():
+	// 	http.Error(w, "request cancelled", http.StatusRequestTimeout)
+	// 	return
+	// case <-time.After(5 * time.Second):
+	// }
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -95,12 +94,12 @@ func (h *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 func (h *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	// Simulate a 2 second delay
-	select {
-	case <-r.Context().Done():
-		http.Error(w, "request cancelled", http.StatusRequestTimeout)
-		return
-	case <-time.After(5 * time.Second):
-	}
+	// select {
+	// case <-r.Context().Done():
+	// 	http.Error(w, "request cancelled", http.StatusRequestTimeout)
+	// 	return
+	// case <-time.After(5 * time.Second):
+	// }
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
