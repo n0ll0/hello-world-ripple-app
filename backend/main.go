@@ -111,6 +111,7 @@ func main() {
 		api.Group(func(protected chi.Router) {
 			protected.Use(middleware.OAuth2Guard(srv))
 			protected.Get("/users", userHandler.List)
+			protected.Get("/users/me", userHandler.GetCurrentUser)
 
 			protected.Get("/todos", todoHandler.List)
 			protected.Post("/todos", todoHandler.Create)

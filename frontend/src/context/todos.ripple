@@ -1,8 +1,9 @@
-import { effect, track, TrackedMap, untrack, type Tracked, Context } from 'ripple';
+import { effect, TrackedMap, untrack, type Tracked, Context } from 'ripple';
 import type { Todo } from '@/types.ts';
-import { getTodos, editTodo, getTodo, deleteTodo, createTodo, login } from '@/useApi.ts';
+import { getTodos, editTodo, getTodo, deleteTodo, createTodo } from '@/useApi.ts';
 import { todoCreatedWS, todoUpdatedWS, todoDeletedWS } from '@/useWebSocket.ts';
-import { generateUUID } from '@/utils/random.ts'
+import { AuthContext } from '@/context/auth.ripple';
+import { generateUUID } from '@/utils/random.ts';
 
 /**
  * TODOS Context Provider
@@ -47,14 +48,13 @@ export const TodosContext = new Context({});
 
 export component TodosProvider({ children }) {
 	const ctx = TodosContext.get();
+	const auth = AuthContext.get();
 
 	ctx.todos = new TrackedMap();
+
+	// Effect to fetch todos when authenticated
 	effect(async () => {
-		const login_response = await login({
-			username: 'uko',
-			password: 'uko',
-		});
-		console.log(login_response);
+		if (!@auth.user) return;
 		const { data: _todos } = await getTodos();
 		console.log(_todos);
 		if (_todos) {
@@ -63,9 +63,18 @@ export component TodosProvider({ children }) {
 				@ctx.todos.set(todo.id, #{ ...todo });
 			}
 		}
+	}, [auth.user]);
+
+	// Effect to clear todos when not authenticated
+	effect(() => {
+		if (!@auth.user) {
+			@ctx.todos.clear();
+		}
 	});
 
 	effect(() => {
+		if (!@auth.user) return;
+		
 		todoCreatedWS.connect();
 		const unsubscribeMessage = todoCreatedWS.onMessage((todo) => {
 			@ctx.todos.set(todo.id, #{ ...todo });
@@ -80,6 +89,8 @@ export component TodosProvider({ children }) {
 		};
 	});
 	effect(() => {
+		if (!@auth.user) return;
+		
 		todoUpdatedWS.connect();
 		const unsubscribeMessage = todoUpdatedWS.onMessage((todo) => {
 			@ctx.todos.set(todo.id, #{ ...todo });
@@ -94,6 +105,8 @@ export component TodosProvider({ children }) {
 		};
 	});
 	effect(() => {
+		if (!@auth.user) return;
+		
 		todoDeletedWS.connect();
 		const unsubscribeMessage = todoDeletedWS.onMessage(({ id }) => {
 			@ctx.todos.delete(id);

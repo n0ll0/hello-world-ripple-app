@@ -1,4 +1,4 @@
-import { Todo } from "@/types.ts";
+import { Todo, User } from "@/types.ts";
 
 interface api_response<T> {
 	data: T;
@@ -111,4 +111,14 @@ export async function login(credentials: { username: string; password: string })
 	}
 }
 
+export async function register(credentials: { username: string; password: string }): Promise<api_response<User>> {
+	return request<User>("/api/users", {
+		method: "POST",
+		body: JSON.stringify(credentials),
+	});
+}
+
+export function getCurrentUser(): Promise<api_response<User>> {
+	return request<User>("/api/users/me");
+}
 

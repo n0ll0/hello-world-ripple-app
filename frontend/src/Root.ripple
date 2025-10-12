@@ -1,0 +1,11 @@
+import { AuthProvider } from '@/context/auth.ripple';
+import { TodosProvider } from '@/context/todos.ripple';
+import { App } from '@/App.ripple';
+
+export component Root() {
+	<AuthProvider>
+		<TodosProvider>
+			<App />
+		</TodosProvider>
+	</AuthProvider>
+}

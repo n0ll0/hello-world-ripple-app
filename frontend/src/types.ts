@@ -26,6 +26,13 @@ export type Todo = {
 };
 export type r_Todo = ripple<Todo>;
 
+export type User = {
+	id: number;
+	username: string;
+	createdAt: string;
+};
+export type r_User = ripple<User>;
+
 export function ripple<T>(value: T): ripple<T> {
 	if (typeof value !== 'object' || value === null) {
 		return value as ripple<T>;

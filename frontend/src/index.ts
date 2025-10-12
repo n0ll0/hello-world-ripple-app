@@ -1,7 +1,7 @@
 import { mount } from 'ripple';
 // @ts-expect-error: known issue, we're working on it
-import { App } from './App.ripple';
+import { Root } from './Root.ripple';
 
-mount(App, {
+mount(Root, {
 	target: document.getElementById('root'),
 });

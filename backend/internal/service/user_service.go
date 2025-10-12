@@ -61,3 +61,12 @@ func (s *UserService) List(ctx context.Context) ([]model.User, error) {
 	}
 	return users, nil
 }
+
+func (s *UserService) GetByID(ctx context.Context, id int64) (*model.User, error) {
+	user, err := s.db.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	user.PasswordHash = ""
+	return user, nil
+}

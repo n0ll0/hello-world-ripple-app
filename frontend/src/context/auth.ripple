@@ -1,0 +1,120 @@
+import { effect, track, Context } from 'ripple';
+import type { User } from '@/types.ts';
+import { login, register, getCurrentUser } from '@/useApi.ts';
+
+/**
+ * Auth Context Provider
+ *
+ * This component creates and manages a reactive context for handling user authentication in the application.
+ * It tracks the current user, authentication status, and provides methods for login, register, and logout.
+ *
+ * Key Features:
+ * - Manages user authentication state
+ * - Provides login and register functions
+ * - Handles token storage and retrieval
+ * - Tracks authentication status
+ *
+ * Provided Object:
+ * - user: Tracked<User | null> - Current authenticated user
+ * - isLoading: Tracked<boolean> - Whether auth operation is in progress
+ * - login(credentials): Async function to login user
+ * - register(credentials): Async function to register new user
+ * - logout(): Function to logout user
+ *
+ * Usage in Components:
+ * To use this context in components, first wrap your app with the AuthProvider component in your root component (e.g., App.ripple).
+ * Then, in any component, use AuthContext.get() to access the shared context:
+ *
+ * import { AuthContext } from './context/auth.ripple';
+ *
+ * In App.ripple:
+ * export component App() {
+ *   <AuthProvider>
+ *     // your app content
+ *   </AuthProvider>
+ * }
+ *
+ * In child components:
+ * export function SomeComponent() {
+ *   const ctx = AuthContext.get();
+ *   // Use @ctx.user, @ctx.isAuthenticated, ctx.login, etc.
+ * }
+ */
+export const AuthContext = new Context({});
+
+export component AuthProvider({ children }) {
+	const ctx = AuthContext.get();
+
+	// Initialize auth state
+	let user = track<User | null>(null);
+	let isLoading = track(false);
+	let trigger = track(0);
+
+	// Check for existing token on mount
+	effect(() => {
+		const token = typeof window !== "undefined" ? window.localStorage.getItem("access_token") : null;
+		if (token) {
+			// Try to fetch current user
+			getCurrentUser().then(userResponse => {
+				if (userResponse.data) {
+					@user = userResponse.data;
+				} else {
+					// Token invalid, remove it
+					if (typeof window !== "undefined") {
+						window.localStorage.removeItem("access_token");
+					}
+				}
+			});
+		}
+	});
+
+	// Login function
+	async function loginUser(credentials: { username: string; password: string }) {
+		@isLoading = true;
+		const response = await login(credentials);
+		if (response.error) {
+			@isLoading = false;
+			return { success: false, error: response.error };
+		}
+		// Fetch current user info
+		const userResponse = await getCurrentUser();
+		if (userResponse.error) {
+			@isLoading = false;
+			return { success: false, error: userResponse.error };
+		}
+		@user = userResponse.data;
+		@isLoading = false;
+		return { success: true };
+	}
+
+	// Register function
+	async function registerUser(credentials: { username: string; password: string }) {
+		@isLoading = true;
+		const response = await register(credentials);
+		if (response.error) {
+			@isLoading = false;
+			return { success: false, error: response.error };
+		}
+		// After registration, automatically login
+		return await loginUser(credentials);
+	}
+
+	// Logout function
+	function logoutUser() {
+		@user = null;
+		@trigger = @trigger + 1;
+		if (typeof window !== "undefined") {
+			window.localStorage.removeItem("access_token");
+		}
+	}
+
+	// Expose context
+	ctx.user = user;
+	ctx.isLoading = isLoading;
+	ctx.trigger = trigger;
+	ctx.login = loginUser;
+	ctx.register = registerUser;
+	ctx.logout = logoutUser;
+
+	<children />
+}
