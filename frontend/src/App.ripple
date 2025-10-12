@@ -1,7 +1,6 @@
 // @ts-expect-error
 import { track } from 'ripple';
 import TodoApp from '@/TodoApp.ripple';
-import { TodosProvider } from './context/todos.ripple';
 
 export component App() {
 	<div>
@@ -23,7 +22,7 @@ export component App() {
 		</div>
 	</div>
 	<div class="container center">
-		<TodosProvider><TodoApp /></TodosProvider>
+		<TodoApp />
 	</div>
 
 	<style>

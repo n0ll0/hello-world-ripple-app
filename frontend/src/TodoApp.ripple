@@ -1,7 +1,7 @@
 import { effect, TrackedObject } from 'ripple';
 import type { Todo } from '@/types.ts';
 import { getTodos, editTodo, getTodo, deleteTodo, createTodo, login } from '@/useApi.ts';
-import { TodosContext } from '@/context/todos.ripple';
+import { TodosContext, TodosProvider } from '@/context/todos.ripple';
 import { AnchoredPopover, AnchoredPopoverTrigger, AnchoredPopoverContent } from './components/Popover.ripple';
 import '@/TodoApp.css';
 
@@ -159,10 +159,12 @@ component TodoList() {
 }
 
 export default component TodoApp() {
-	<div style="max-width:80ch;text-align:left;">
-		<CreateTodo />
-		<h1>{'Todo List'}</h1>
+	<TodosProvider>
+		<div style="max-width:80ch;text-align:left;">
+			<CreateTodo />
+			<h1>{'Todo List'}</h1>
 
-		<TodoList />
-	</div>
+			<TodoList />
+		</div>
+	</TodosProvider>
 }
