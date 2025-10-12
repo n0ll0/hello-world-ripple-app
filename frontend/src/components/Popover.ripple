@@ -1,75 +1,28 @@
 import { effect, TrackedObject } from 'ripple';
+import { generateUUID } from '@/utils/random.ts'
 
 // AnchoredPopover
 // Usage:
 // <AnchoredPopover>
-//   <AnchoredPopoverTrigger>
-//     <button>⋮</button>
-//   </AnchoredPopoverTrigger>
-//   <AnchoredPopoverContent>
-//     <div>Content here</div>
-//   </AnchoredPopoverContent>
+//   <AnchoredPopoverTrigger>...</AnchoredPopoverTrigger>
+//   <AnchoredPopoverContent>...</AnchoredPopoverContent>
 // </AnchoredPopover>
 
 // Global reference set by AnchoredPopover at runtime; must not be a TrackedObject outside a component
-let POPOVER_STATE = null;
-
-export component AnchoredPopoverTrigger({children, ...rest}) {
-	<button {...rest} onClick={(e) => {
-		e.stopPropagation();
-		// If not mounted yet, ignore clicks
-		if (!POPOVER_STATE) return;
-		const target = e.currentTarget || e.target;
-		const rect = target.getBoundingClientRect();
-
-    // const popoverWidth = ;
-    // const popoverHeight = ;
-
-		let x = rect.left + window.scrollX;
-		let y = rect.bottom + window.scrollY + 8;
-
-		if (x /*+ popoverWidth*/ > window.innerWidth + window.scrollX) {
-			x = rect.right + window.scrollX //- popoverWidth;
-		}
-		if (x < window.scrollX) {
-			x = window.scrollX + 10;
-		}
-		if (y /*+ popoverHeight*/ > window.innerHeight + window.scrollY) {
-			y = rect.top + window.scrollY //- popoverHeight - 8;
-		}
-		if (y < window.scrollY) {
-			y = window.scrollY + 10;
-		}
-
-		@POPOVER_STATE.x = x;
-		@POPOVER_STATE.y = y;
-		@POPOVER_STATE.isOpen = !@POPOVER_STATE.isOpen;
-	}}>
-    <children></children>
-	</button>
-}
-
-export component AnchoredPopoverContent({children}) {
-	if (POPOVER_STATE && @POPOVER_STATE.isOpen) {
-		<div
-			class="anchored-popover-content"
-			style={`position: fixed; left: ${@POPOVER_STATE.x}px; top: ${@POPOVER_STATE.y}px; background: #fff; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; border-radius: 6px; padding: 1rem; width: max-content;`}
-			onclick={(e) => e.stopPropagation()}
-		>
-      <children></children>
-		</div>
-	}
-}
+let POPOVER_STATES = new Map();
+let POPOVER_CURRENT_ID = null;
 
 export component AnchoredPopover({ children }) {
+	const popoverId = generateUUID();
 	let popoverState = new TrackedObject({
 		isOpen: false,
 		x: 0,
 		y: 0,
 	});
 
-	// Update global state reference in this component context
-	POPOVER_STATE = popoverState;
+	POPOVER_STATES.set(popoverId, popoverState);
+
+	POPOVER_CURRENT_ID = popoverId;
 
 	effect(() => {
 		if (@popoverState.isOpen) {
@@ -79,18 +32,78 @@ export component AnchoredPopover({ children }) {
 				}
 			};
 			document.addEventListener('click', handler);
-			return () => document.removeEventListener('click', handler);
+			const keyHandler = (e) => {
+				if (e.key === 'Escape') {
+					@popoverState.isOpen = false;
+				}
+			};
+			document.addEventListener('keydown', keyHandler);
+			return () => {
+				document.removeEventListener('click', handler);
+				document.removeEventListener('keydown', keyHandler);
+			};
 		}
 	});
 
 	// Track mount/unmount with a no-op effect and clean global ref on unmount
 	effect(() => {
 		return () => {
-			if (POPOVER_STATE === popoverState) POPOVER_STATE = null;
+			POPOVER_STATES.delete(popoverId);
+			if (POPOVER_CURRENT_ID === popoverId) POPOVER_CURRENT_ID = null;
 		};
 	});
 
 	<div style="position: relative;">
-    <children></children>
+		<children />
 	</div>
 }
+
+export component AnchoredPopoverTrigger({ children, ...rest }) {
+	const id = POPOVER_CURRENT_ID;
+	const state = POPOVER_STATES.get(id);
+	if (state) {
+		<button {...rest} onClick={(e) => {
+			e.stopPropagation();
+			const target = e.currentTarget;
+			const rect = target.getBoundingClientRect();
+
+			let x = rect.left + window.scrollX;
+			let y = rect.bottom + window.scrollY + 8;
+
+			if (x > window.innerWidth + window.scrollX) {
+				x = rect.right + window.scrollX;
+			}
+			if (x < window.scrollX) {
+				x = window.scrollX + 10;
+			}
+			if (y > window.innerHeight + window.scrollY) {
+				y = rect.top + window.scrollY - 8;
+			}
+			if (y < window.scrollY) {
+				y = window.scrollY + 10;
+			}
+
+			@state.x = x;
+			@state.y = y;
+			@state.isOpen = !@state.isOpen;
+		}}>
+			<children />
+		</button>
+	}
+}
+
+export component AnchoredPopoverContent({ children }) {
+	const id = POPOVER_CURRENT_ID;
+	const state = POPOVER_STATES.get(id);
+	if (state && @state.isOpen) {
+		<div
+			class="anchored-popover-content"
+			style={`position: fixed; left: ${@state.x}px; top: ${@state.y}px; background: #fff; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; border-radius: 6px; padding: 1rem; width: max-content;`}
+			onclick={(e) => e.stopPropagation()}
+		>
+			<children />
+		</div>
+	}
+}
+
+

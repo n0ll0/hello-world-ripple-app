@@ -1,57 +1,136 @@
-import { effect, track, TrackedMap, untrack, type Tracked, TrackedObject } from 'ripple';
+import { effect, track, TrackedMap, untrack, type Tracked, Context } from 'ripple';
 import type { Todo } from '@/types.ts';
 import { getTodos, editTodo, getTodo, deleteTodo, createTodo, login } from '@/useApi.ts';
+import { todoCreatedWS, todoUpdatedWS, todoDeletedWS } from '@/useWebSocket.ts';
+import { generateUUID } from '@/utils/random.ts'
 
-export function TODOS() {
-	const todos = new TrackedMap<string, Tracked<Todo>>();
+/**
+ * TODOS Context Provider
+ * 
+ * This component creates and manages a reactive context for handling todos in the application.
+ * It initializes a TrackedMap for storing todos, tracks the loading status, and sets up effects
+ * for fetching initial todos via API, establishing a WebSocket connection for real-time updates,
+ * and logging changes to the todos map.
+ * 
+ * Key Features:
+ * - Fetches todos on initialization using login and getTodos API calls.
+ * - Maintains a WebSocket connection to receive real-time todo updates.
+ * - Provides methods to add, edit, and remove todos, with optimistic updates and server synchronization.
+ * 
+ * Provided Object:
+ * - todos: TrackedArray<TrackedObject<Todo>> - Reactive array of todos.
+ * - todos_status: Tracked<string> - Current status ('loading' or 'loaded').
+ * - addTodo(todo): Async function to add a new todo with temporary ID and server sync.
+ * - r_editTodo(id, newTodo): Async function to edit an existing todo with reactivity and server sync.
+ * - removeTodo(id): Function to remove a todo by ID, syncing with the server.
+ * 
+ * Usage in Components:
+ * To use this context in components, first wrap your app with the TodosProvider component in your root component (e.g., App.ripple).
+ * Then, in any component, use TodosContext.get() to access the shared context:
+ * 
+ * import { TodosContext } from './context/todos.ripple';
+ * 
+ * In App.ripple:
+ * export component App() {
+ *   <TodosProvider>
+ *     // your app content
+ *   </TodosProvider>
+ * }
+ * 
+ * In child components:
+ * export function SomeComponent() {
+ *   const ctx = TodosContext.get();
+ *   // Use @ctx.todos_status, ctx.todos, ctx.addTodo, etc.
+ * }
+ */
+export const TodosContext = new Context({});
+
+export component TodosProvider({ children }) {
+	const ctx = TodosContext.get();
+
+	ctx.todos = new TrackedMap();
 	effect(async () => {
-		const loginres = await login({
+		const login_response = await login({
 			username: 'uko',
 			password: 'uko',
 		});
-		console.log(loginres);
+		console.log(login_response);
 		const { data: _todos } = await getTodos();
 		console.log(_todos);
 		if (_todos) {
 			console.log(_todos);
 			for (const todo of _todos) {
-				console.log(todo);
-				@todos.set(todo.id, track(todo));
-				// effect(()=>{
-				// 	editTodo($todo.id, unripple(untrack($todo)))
-				// });
+				@ctx.todos.set(todo.id, #{ ...todo });
 			}
 		}
 	});
+
 	effect(() => {
-		console.log(@todos);
+		todoCreatedWS.connect();
+		const unsubscribeMessage = todoCreatedWS.onMessage((todo) => {
+			@ctx.todos.set(todo.id, #{ ...todo });
+		});
+		const unsubscribeConnect = todoCreatedWS.onConnect(() => console.log('WebSocket "created" connected'));
+		const unsubscribeDisconnect = todoCreatedWS.onDisconnect(() => console.log('WebSocket "created" disconnected'));
+		return () => {
+			unsubscribeMessage();
+			unsubscribeConnect();
+			unsubscribeDisconnect();
+			todoCreatedWS.disconnect();
+		};
+	});
+	effect(() => {
+		todoUpdatedWS.connect();
+		const unsubscribeMessage = todoUpdatedWS.onMessage((todo) => {
+			@ctx.todos.set(todo.id, #{ ...todo });
+		});
+		const unsubscribeConnect = todoUpdatedWS.onConnect(() => console.log('WebSocket "updated" connected'));
+		const unsubscribeDisconnect = todoUpdatedWS.onDisconnect(() => console.log('WebSocket "updated" disconnected'));
+		return () => {
+			unsubscribeMessage();
+			unsubscribeConnect();
+			unsubscribeDisconnect();
+			todoUpdatedWS.disconnect();
+		};
+	});
+	effect(() => {
+		todoDeletedWS.connect();
+		const unsubscribeMessage = todoDeletedWS.onMessage(({ id }) => {
+			@ctx.todos.delete(id);
+		});
+		const unsubscribeConnect = todoDeletedWS.onConnect(() => console.log('WebSocket "deleted" connected'));
+		const unsubscribeDisconnect = todoDeletedWS.onDisconnect(() => console.log('WebSocket "deleted" disconnected'));
+		return () => {
+			unsubscribeMessage();
+			unsubscribeConnect();
+			unsubscribeDisconnect();
+			todoDeletedWS.disconnect();
+		};
 	});
 
-	async function addTodo(todo) {
-		const tempId = crypto.randomUUID();
-		@todos.set(tempId, track(todo));
+	effect(() => {
+		console.log(@ctx.todos);
+	});
+
+	ctx.addTodo = async function addTodo(todo) {
+		const tempTodo = #{ ...todo, id: generateUUID() };
+		@ctx.todos.set(tempTodo.id, #{ ...tempTodo });
 		const { data: _todo } = await createTodo(todo);
 
-		@todos.delete(tempId);
-		@todos.set(@todo.id, track(_todo));
+		@ctx.todos.delete(tempTodo.id);
+		@ctx.todos.set(_todo.id, track(_todo));
 	}
 
-	async function r_editTodo(id, newTodo) {
-		@todos.set(id, track(newTodo)); // Trigger reactivity by creating a new object
+	ctx.r_editTodo = async function r_editTodo(id, newTodo) {
+		@ctx.todos.set(newTodo.id, #{ ...newTodo });
 		const { data: _todo } = await editTodo(id, newTodo);
-		@todos.set(id, track(_todo));
-		// Trigger reactivity by creating a new object
+		@ctx.todos.set(_todo.id, #{ ..._todo });
 	}
 
-	function removeTodo(id) {
+	ctx.removeTodo = function removeTodo(id) {
+		@ctx.todos.delete(id);
 		deleteTodo(id);
-		@todos.delete(id);
 	}
 
-	return {
-		todos,
-		addTodo,
-		r_editTodo,
-		removeTodo,
-	};
+	<children />
 }
