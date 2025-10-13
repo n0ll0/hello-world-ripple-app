@@ -5,6 +5,7 @@
       "name": "vite-template-ripple",
       "dependencies": {
         "ripple": "^0.2.121",
+        "ripple-router": "^0.4.10",
       },
       "devDependencies": {
         "prettier": "^3.6.2",
@@ -61,6 +62,8 @@
     "prettier-plugin-ripple": ["prettier-plugin-ripple@0.2.121", "", { "peerDependencies": { "prettier": ">=2.0.0" } }, "sha512-GPRlpmtJsSahLynCpRcavlEkKRiaOBKk7jXgVih5SJZmkxy8OMkrJMpgWcfBHO1h2oD5LTGpG+tzq4fNpJ/gwg=="],
 
     "ripple": ["ripple@0.2.121", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.5", "@sveltejs/acorn-typescript": "^1.0.6", "acorn": "^8.15.0", "clsx": "^2.1.1", "devalue": "^5.3.2", "esm-env": "^1.2.2", "esrap": "^2.1.0", "is-reference": "^3.0.3", "magic-string": "^0.30.18", "muggle-string": "^0.4.1", "zimmerframe": "^1.1.2" } }, "sha512-TvEFBnlbY7BseNneLJ+IYCJLA1rgH8utEWA737NUXPAotnYZza/ZHxum+cPlwZeLZaEDwHs4+SGA3qWh3iML/Q=="],
+
+    "ripple-router": ["ripple-router@0.4.10", "", { "peerDependencies": { "ripple": "0.2.103" } }, "sha512-gjibWGlphUF4l0hQu4zxwWfwsqfc1L/Slccg/K/ZOBq6YVhOZtia9eZJGcOYuSuB+Nf+0SQbhWCZ5WZTOP24rg=="],
 
     "rollup": ["rollup@4.50.0", "", { "dependencies": { "@types/estree": "1.0.8" }, "optionalDependencies": { "@rollup/rollup-win32-x64-msvc": "4.50.0", "fsevents": "~2.3.2" }, "bin": "dist/bin/rollup" }, "sha512-/Zl4D8zPifNmyGzJS+3kVoyXeDeT/GrsJM94sACNg9RtUE0hrHa1bNPtRSrfHTMH5HjRzce6K7rlTh3Khiw+pw=="],
 

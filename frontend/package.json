@@ -23,6 +23,7 @@
 		"vite-plugin-ripple": "^0.2.121"
 	},
 	"dependencies": {
-		"ripple": "^0.2.121"
+		"ripple": "^0.2.121",
+		"ripple-router": "^0.4.10"
 	}
 }

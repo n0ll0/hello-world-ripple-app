@@ -1,4 +1,4 @@
-import { effect, TrackedMap, untrack, type Tracked, Context } from 'ripple';
+import { effect, TrackedMap, track, type Tracked, Context } from 'ripple';
 import type { Todo } from '@/types.ts';
 import { getTodos, editTodo, getTodo, deleteTodo, createTodo } from '@/useApi.ts';
 import { todoCreatedWS, todoUpdatedWS, todoDeletedWS } from '@/useWebSocket.ts';
@@ -63,7 +63,7 @@ export component TodosProvider({ children }) {
 				@ctx.todos.set(todo.id, #{ ...todo });
 			}
 		}
-	}, [auth.user]);
+	});
 
 	// Effect to clear todos when not authenticated
 	effect(() => {

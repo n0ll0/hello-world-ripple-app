@@ -1,11 +1,18 @@
 import { AuthProvider } from '@/context/auth.ripple';
 import { TodosProvider } from '@/context/todos.ripple';
+import { Router, Route } from 'ripple-router';
 import { App } from '@/App.ripple';
+import { SignIn } from '@/SignIn.ripple';
+import { SignUp } from '@/SignUp.ripple';
 
 export component Root() {
 	<AuthProvider>
 		<TodosProvider>
-			<App />
+			<Router>
+				<Route path='/signin' element={SignIn} />
+				<Route path='/signup' element={SignUp} />
+				<Route path='/' element={App} />
+			</Router>
 		</TodosProvider>
 	</AuthProvider>
 }

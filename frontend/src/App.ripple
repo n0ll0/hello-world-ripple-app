@@ -1,157 +1,107 @@
 // @ts-expect-error
-import { track, effect } from 'ripple';
-import TodoApp from '@/TodoApp.ripple';
+import { effect } from 'ripple';
+import { navigateTo } from 'ripple-router';
+import { Layout } from '@/Layout.ripple';
 import { AuthContext } from '@/context/auth.ripple';
-import { SignIn } from '@/components/SignIn.ripple';
-import { SignUp } from '@/components/SignUp.ripple';
+import TodoApp from '@/TodoApp.ripple';
 
 export component App() {
 	const auth = AuthContext.get();
 
-	let showSignUp = track(false);
-
 	// Force re-render when auth state changes
 	effect(() => {
-		// This effect depends on both user and trigger
-		const currentUser = @auth.user;
-		const currentTrigger = @auth.trigger;
-		console.log('Auth state changed:', currentUser, currentTrigger);
+		console.log('App: Auth state changed:', @auth.@user);
 	});
 
-	<div>
-		if (!@auth.@user) {
-			<div class="auth-container">
-				<div class="auth-tabs">
-					<button
-						class={!@showSignUp ? 'active' : ''}
-						onclick={() => @showSignUp = false}
-					>
-						{'Sign In'}
-					</button>
-					<button
-						class={@showSignUp ? 'active' : ''}
-						onclick={() => @showSignUp = true}
-					>
-						{'Sign Up'}
-					</button>
+	<Layout>
+		if (!@auth.@isLoading && !@auth.@user) {
+			<div class="auth-message">
+				<div class="message-content">
+					<h2>{'Welcome to Ripple Todo App'}</h2>
+					<p>{'Please sign in to manage your todos'}</p>
+					<div class="auth-prompt">
+						<a href="/signin" class="auth-link primary">{'Sign In'}</a>
+						<span>{' or '}</span>
+						<a href="/signup" class="auth-link">{'Sign Up'}</a>
+					</div>
 				</div>
-				if (@showSignUp) {
-					<SignUp />
-				} else {
-					<SignIn />
-				}
 			</div>
 		} else {
-			<header class="app-header">
-				<h1>{'Welcome to Ripple!'}</h1>
-				<div class="user-info">
-					<span>{'Hello, ' + (@auth.user?.username || 'User')}</span>
-					<button onclick={() => auth.logout()} class="logout-btn">{'Logout'}</button>
-				</div>
-			</header>
-			<div class="container center">
-				<TodoApp />
-			</div>
+			<TodoApp />
 		}
-	</div>
-
+	</Layout>
 	<style>
-		.auth-container {
-			min-height: 100vh;
-		}
-
-		.auth-tabs {
+		.auth-message {
 			display: flex;
 			justify-content: center;
-			padding: 1rem;
-			background: #f8f9fa;
+			align-items: center;
+			min-height: 60vh;
+			padding: 2rem;
 		}
 
-		.auth-tabs button {
-			padding: 0.5rem 1rem;
-			border: none;
-			background: none;
-			cursor: pointer;
-			font-size: 1rem;
+		.message-content {
+			text-align: center;
+			max-width: 500px;
+			padding: 2rem;
+			background: white;
+			border-radius: 8px;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		}
+
+		.message-content h2 {
+			color: #333;
+			margin-bottom: 1rem;
+			font-size: 1.8rem;
+		}
+
+		.message-content p {
+			color: #666;
+			margin-bottom: 2rem;
+			font-size: 1.1rem;
+		}
+
+		.auth-prompt {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			gap: 0.5rem;
+			flex-wrap: wrap;
+		}
+
+		.auth-link {
+			color: #667eea;
+			text-decoration: none;
+			font-weight: 500;
+			padding: 0.75rem 1.5rem;
 			border-radius: 4px;
-			transition: background-color 0.3s;
+			transition: all 0.3s;
 		}
 
-		.auth-tabs button.active {
+		.auth-link:hover {
+			background: #f8f9fa;
+			color: #5a67d8;
+		}
+
+		.auth-link.primary {
 			background: #667eea;
 			color: white;
 		}
 
-		.auth-tabs button:hover:not(.active) {
-			background: #e9ecef;
-		}
-
-		.app-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 1rem 2rem;
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		.auth-link.primary:hover {
+			background: #5a67d8;
 			color: white;
 		}
 
-		.user-info {
-			display: flex;
-			align-items: center;
-			gap: 1rem;
-		}
+		@media (max-width: 480px) {
+			.auth-prompt {
+				flex-direction: column;
+				gap: 1rem;
+			}
 
-		.logout-btn {
-			padding: 0.5rem 1rem;
-			background: rgba(255, 255, 255, 0.2);
-			color: white;
-			border: 1px solid rgba(255, 255, 255, 0.3);
-			border-radius: 4px;
-			cursor: pointer;
-			transition: background-color 0.3s;
-		}
-
-		.logout-btn:hover {
-			background: rgba(255, 255, 255, 0.3);
-		}
-
-		.container {
-			text-align: center;
-			font-family: "Arial", sans-serif;
-		}
-
-		p {
-			margin: 12px 0;
-			font-family: "Arial", sans-serif;
-		}
-
-		code {
-			background: #f4f4f4;
-			padding: 2px 6px;
-			border-radius: 4px;
-			font-family: "Courier New", monospace;
-			color: #333;
-		}
-
-		button {
-			font-size: 1.5em;
-			padding: 6px 12px;
-			margin: 0 6px;
-			cursor: pointer;
-			border: none;
-			font-family: "Courier New", monospace;
-		}
-		  button {
-			background-color: #e0e0e0;
-		}
-		  .count {
-			margin: 0 12px;
-			font-size: 1.5em;
-		}
-		  .center {
-			display: flex;
-			flex: 1;
-			justify-content: center;
+			.auth-link {
+				width: 100%;
+				text-align: center;
+			}
 		}
 	</style>
 }
