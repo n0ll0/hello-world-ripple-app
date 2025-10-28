@@ -44,3 +44,14 @@
   position: absolute;
   position-area: bottom;
 }
+
+[popover] {
+  &:popover-open {
+    animation: fadeIn 0.2s ease-in-out;
+    pointer-events: auto;
+  }
+  &:not(:popover-open) {
+    pointer-events: none;
+    display: none;
+  }
+}
