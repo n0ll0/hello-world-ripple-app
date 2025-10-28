@@ -1,0 +1,110 @@
+import { effect, TrackedObject } from 'ripple';
+import { generateUUID } from '@/utils/random.ts';
+
+// AnchoredPopover
+// Usage:
+// <AnchoredPopover>
+//   <AnchoredPopoverTrigger>...</AnchoredPopoverTrigger>
+//   <AnchoredPopoverContent>...</AnchoredPopoverContent>
+// </AnchoredPopover>
+
+// Global reference set by AnchoredPopover at runtime; must not be a TrackedObject outside a component
+let POPOVER_STATES = new Map();
+let POPOVER_CURRENT_ID = null;
+
+export component AnchoredPopover({ children }) {
+	const popoverId = generateUUID();
+	let popoverState = new TrackedObject({
+		isOpen: false,
+		x: 0,
+		y: 0,
+	});
+
+	POPOVER_STATES.set(popoverId, popoverState);
+
+	POPOVER_CURRENT_ID = popoverId;
+
+	effect(() => {
+		if (@popoverState.isOpen) {
+			const handler = (e) => {
+				if (!e.target.closest('.anchored-popover-content')) {
+					@popoverState.isOpen = false;
+				}
+			};
+			document.addEventListener('click', handler);
+			const keyHandler = (e) => {
+				if (e.key === 'Escape') {
+					@popoverState.isOpen = false;
+				}
+			};
+			document.addEventListener('keydown', keyHandler);
+			return () => {
+				document.removeEventListener('click', handler);
+				document.removeEventListener('keydown', keyHandler);
+			};
+		}
+	});
+
+	// Track mount/unmount with a no-op effect and clean global ref on unmount
+	effect(() => {
+		return () => {
+			POPOVER_STATES.delete(popoverId);
+			if (POPOVER_CURRENT_ID === popoverId) POPOVER_CURRENT_ID = null;
+		};
+	});
+
+	<div style="position: relative;">
+		<children />
+	</div>
+}
+
+export component AnchoredPopoverTrigger({ children, ...rest }) {
+	const id = POPOVER_CURRENT_ID;
+	const state = POPOVER_STATES.get(id);
+	if (state) {
+		<button
+			{...rest}
+			onClick={(e) => {
+				e.stopPropagation();
+				const target = e.currentTarget;
+				const rect = target.getBoundingClientRect();
+
+				let x = rect.left + window.scrollX;
+				let y = rect.bottom + window.scrollY + 8;
+
+				if (x > window.innerWidth + window.scrollX) {
+					x = rect.right + window.scrollX;
+				}
+				if (x < window.scrollX) {
+					x = window.scrollX + 10;
+				}
+				if (y > window.innerHeight + window.scrollY) {
+					y = rect.top + window.scrollY - 8;
+				}
+				if (y < window.scrollY) {
+					y = window.scrollY + 10;
+				}
+
+				@state.x = x;
+				@state.y = y;
+				@state.isOpen = !@state.isOpen;
+			}}
+		>
+			<children />
+		</button>
+	}
+}
+
+export component AnchoredPopoverContent({ children }) {
+	const id = POPOVER_CURRENT_ID;
+	const state = POPOVER_STATES.get(id);
+	if (state && @state.isOpen) {
+		<div
+			class="anchored-popover-content"
+			style={`position: fixed; left: ${@state.x}px; top: ${@state.y}px; background: #fff; border: 1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; border-radius: 6px; padding: 1rem; width: max-content;`}
+			onclick={(e) => e.stopPropagation()}
+		>
+			<children />
+		</div>
+	}
+}

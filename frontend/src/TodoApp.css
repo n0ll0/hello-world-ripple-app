@@ -34,7 +34,13 @@
   gap: 0.5em;
   width: max-content;
   
-  /* CSS Anchor Positioning */
+  /* CSS Anchor Positioning API
+   * Requires browser support for:
+   * - anchor HTML attribute (links popover to anchor element)
+   * - position-area CSS property (positions popover relative to anchor)
+   * Supported in Chrome 125+, Edge 125+
+   * See: https://developer.mozilla.org/en-US/docs/Web/CSS/position-area
+   */
   position: absolute;
   position-area: bottom;
 }
