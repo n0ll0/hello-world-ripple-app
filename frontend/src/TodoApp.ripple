@@ -2,7 +2,6 @@ import { effect, TrackedObject } from 'ripple';
 import type { Todo } from '@/types.ts';
 import { getTodos, editTodo, getTodo, deleteTodo, createTodo, login } from '@/useApi.ts';
 import { TodosContext, TodosProvider } from '@/context/todos.ripple';
-import { AnchoredPopover, AnchoredPopoverTrigger, AnchoredPopoverContent } from './components/Popover.ripple';
 import '@/TodoApp.css';
 
 var _IDCNT_ = 0;
@@ -130,28 +129,30 @@ component TodoList() {
 			for (const [id, todo] of @ctx.todos) {
 				<div class="todo">
 					<span>{@todo.title}</span>
-					<AnchoredPopover>
-						<AnchoredPopoverTrigger
-							style="background:none;border:none;cursor:pointer;"
-							type="button"
-							tabindex="0"
+					<button
+						class="popover-trigger"
+						id={`anchor-${id}`}
+						popovertarget={`menu-${id}`}
+						type="button"
+					>
+						{'⋮'}
+					</button>
+					<div
+						id={`menu-${id}`}
+						popover="auto"
+						class="popover-content"
+						anchor={`anchor-${id}`}
+					>
+						<button
+							onclick={() => {
+								@ctx.removeTodo(id);
+							}}
+							class="btn btn-danger"
 						>
-							{'⋮'}
-						</AnchoredPopoverTrigger>
-						<AnchoredPopoverContent>
-							<div style="display: flex; flex-direction: column; gap: 0.5em;">
-								<button
-									onclick={() => {
-										@ctx.removeTodo(id);
-									}}
-									class="btn btn-danger"
-								>
-									{'Delete'}
-								</button>
-								<EditTodo todo={todo} />
-							</div>
-						</AnchoredPopoverContent>
-					</AnchoredPopover>
+							{'Delete'}
+						</button>
+						<EditTodo todo={todo} />
+					</div>
 				</div>
 			}
 		}
